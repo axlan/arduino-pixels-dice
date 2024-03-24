@@ -17,11 +17,18 @@ namespace pixels {
 
 namespace {
 
+enum class DieConnectionState {
+  DONT_CONNECT,
+  CONNECTING,
+  CONNECTED,
+  LOST_CONNECTION,
+};
+
 struct DieState {
   DescriptionData description;
   BLEAdvertisedDevice device;
   BLEClient *client = nullptr;
-  bool try_to_connect_ = false;
+  DieConnectionState connection_state = DieConnectionState::DONT_CONNECT;
 };
 
 class PixelAdvertiseCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -120,6 +127,9 @@ void PixelAdvertiseCallbacks::onResult(BLEAdvertisedDevice advertisedDevice) {
     // The Die was previously found.
     if (DieFound(pixelId)) {
       log_d("Existing die %u found", pixelId);
+      if (die_map_[pixelId].connection_state == DieConnectionState::LOST_CONNECTION) {
+        die_map_[pixelId].connection_state == DieConnectionState::CONNECTING;
+      }
       continue;
     }
 
@@ -130,7 +140,9 @@ void PixelAdvertiseCallbacks::onResult(BLEAdvertisedDevice advertisedDevice) {
       die.description.name = advertisedDevice.getName();
       die.device = advertisedDevice;
       die.client = BLEDevice::createClient();
-      die.try_to_connect_ = auto_connect_;
+      if (auto_connect_) {
+        die.connection_state = DieConnectionState::CONNECTING;
+      }
 
       // This default constructs an instance of DieState in the map.
       log_i(">>> CREATE NEW DICE %s (%u) <<<", die.description.name.c_str(),
@@ -206,9 +218,9 @@ static void UpdateDieConnections() {
       }
     };
 
-    if (!die.try_to_connect_) {
+    if (die.connection_state == DieConnectionState::DONT_CONNECT) {
       TryDisconnect();
-    } else if (!die.client->isConnected()) {
+    } else if (die.connection_state == DieConnectionState::CONNECTING) {
       log_i("Connecting");
       die.client->connect(&die.device);
       if (!die.client->isConnected()) {
@@ -243,7 +255,12 @@ static void UpdateDieConnections() {
       }
 
       log_i("Connected to %s (%u) <<<", die.description.name.c_str(), id);
+      die.connection_state == DieConnectionState::CONNECTED;
       return;
+    } else if (die.connection_state == DieConnectionState::CONNECTED) {
+      if (!die.client->isConnected()) {
+        die.connection_state == DieConnectionState::LOST_CONNECTION;
+      }
     }
   }
 }
@@ -292,14 +309,14 @@ void ScanForDice(uint32_t duration, uint32_t delay_between_scans,
 void StopScanning() { run_scans_ = false; }
 
 void ListDice(std::vector<PixelsDieID> &out_list,
-              DieConnectionState die_to_list) {
+              DieSelection die_to_list) {
   out_list.clear();
   if (xSemaphoreTake(connect_mutex_handle_, portMAX_DELAY)) {
     for (const auto &pair : die_map_) {
-      if (die_to_list == DieConnectionState::ANY ||
-          (die_to_list == DieConnectionState::CONNECTED &&
+      if (die_to_list == DieSelection::ANY ||
+          (die_to_list == DieSelection::CONNECTED &&
            pair.second.client->isConnected()) ||
-          (die_to_list == DieConnectionState::DISCONNECTED &&
+          (die_to_list == DieSelection::DISCONNECTED &&
            !pair.second.client->isConnected())) {
         out_list.push_back(pair.first);
       }
@@ -311,8 +328,9 @@ void ListDice(std::vector<PixelsDieID> &out_list,
 void ConnectDie(PixelsDieID id) {
   if (!DieFound(id)) {
     log_e("Connecting to unknown die");
-  } else {
-    die_map_[id].try_to_connect_ = true;
+  // Only change state if die was previously blacklisted.
+  } else if (die_map_[id].connection_state == DieConnectionState::DONT_CONNECT) {
+    die_map_[id].connection_state = DieConnectionState::CONNECTING;
   }
 }
 
@@ -320,7 +338,7 @@ void DisconnectDie(PixelsDieID id) {
   if (!DieFound(id)) {
     log_e("Disconnecting from unknown die");
   } else {
-    die_map_[id].try_to_connect_ = false;
+    die_map_[id].connection_state = DieConnectionState::DONT_CONNECT;
   }
 }
 

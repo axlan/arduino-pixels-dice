@@ -60,7 +60,7 @@ inline const char* ToString(RollState state) {
 /**
  * Used to filter for dice based on connection status. 
  */
-enum class DieConnectionState {
+enum class DieSelection {
   CONNECTED,
   DISCONNECTED,
   ANY,
@@ -111,7 +111,7 @@ void StopScanning();
  * dice.
  */
 void ListDice(std::vector<PixelsDieID>& out_list,
-              DieConnectionState die_to_list = DieConnectionState::CONNECTED);
+              DieSelection die_to_list = DieSelection::CONNECTED);
 
 /**
  * Start trying to establish a connection to a die.
