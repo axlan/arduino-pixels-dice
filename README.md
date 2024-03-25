@@ -33,6 +33,16 @@ These return all the events sent out by the connected die since the last call.
 
 These queues continue to grow if not read, so they should be polled regularly. There is a cutoff of 100 values currently.
 
+## Using BLE + WiFi
+
+I haven't run into any direct issues using WiFi and BLE. However, including both libraries pushes the binary size over 1MB. Many ESP32 dev boards have 4MB flash with the default partition size of 1MB for the main application. Since this is not big enough, a non-standard partition must be used.
+
+Here is some documentation on the partitioning: <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html>
+
+See <https://robotzero.one/arduino-ide-partitions/> for some information on how to do this in the Arduino IDE.
+
+See <https://docs.platformio.org/en/latest/platforms/espressif32.html#partition-tables> for details on how to do this with PlatformIO. You can also see the `web_request_example` env in `platformio.ini`.
+
 # PlatformIO
 
 There's a `platformio.ini` file to allow running the examples from this library in PlatformIO. It does pre/post script modifications to copy the *.ino files into the `src/` directory.

@@ -1,3 +1,25 @@
+/**
+ * Send dice rolls as JSON data in HTTP POST requests to a web server.
+ *
+ * NOTE: THIS SKETCH IS TOO BIG FOR THE DEFAULT 1MB ESP32 PARTITION!
+ *
+ * For Arduino:
+ *   In the Arduino IDE in the "Tools" bar on top, set the "Partition Scheme"
+ *   to "No OTA (2MB APP/2MB SPIFFS)", or any partition with an APP size of 2MB
+ *   or more.
+ *
+ * For PlatformIO:
+ *   See `platformio.ini` and README for how to set the `board_build.partitions`
+ *   to a custom partition CSV.
+ *   See
+ * https://docs.platformio.org/en/latest/platforms/espressif32.html#partition-tables
+ *   and included examples/WebRequest/no_factory_4MB.csv
+ *
+ * The included examples/WebRequest/test_server.py Python server can be used to
+ * test this functionality. You may need to set a port 8080 (or whatever port
+ * you use) inbound firewall exception on Windows.
+ */
+
 #include <Arduino.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
@@ -13,6 +35,8 @@ WiFiMulti wifiMulti;
 
 static constexpr const char *SSID = "SSID";
 static constexpr const char *PASSWORD = "PASSWORD";
+// The host server to send data to. This example uses port 8080, but leaving out
+// the port defaults to the normal HTTP port 80.
 static constexpr const char *REQUEST_URL = "http://host_address:8080/test";
 
 void setup() {
@@ -21,9 +45,14 @@ void setup() {
 
   wifiMulti.addAP(SSID, PASSWORD);
 
+  // Start BLE scans for 2 seconds then waiting 5 seconds for the next scan
+  // On completion the discovered dice are connected to
   pixels::ScanForDice(2, 5);
 }
 
+// The vectors to hold results queried from the library
+// Since vectors allocate data, it's more efficient to keep reusing objects
+// instead of declaring them on the stack
 pixels::RollUpdates roll_updates;
 pixels::BatteryUpdates battery_updates;
 
