@@ -58,7 +58,7 @@ inline const char* ToString(RollState state) {
 }
 
 /**
- * Used to filter for dice based on connection status. 
+ * Used to filter for dice based on connection status.
  */
 enum class DieSelection {
   CONNECTED,
@@ -67,7 +67,8 @@ enum class DieSelection {
 };
 
 struct RollEvent {
-  unsigned long timestamp = 0;           // System time in milliseconds when event was received.
+  unsigned long timestamp =
+      0;  // System time in milliseconds when event was received.
   RollState state = RollState::UNKNOWN;  // Current rolling state
   uint8_t current_face = 0;              // Current face up (face index)
   RollEvent(unsigned long timestamp, RollState state, uint8_t current_face)

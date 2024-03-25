@@ -127,8 +127,10 @@ void PixelAdvertiseCallbacks::onResult(BLEAdvertisedDevice advertisedDevice) {
     // The Die was previously found.
     if (DieFound(pixelId)) {
       log_d("Existing die %u found", pixelId);
-      if (die_map_[pixelId].connection_state == DieConnectionState::LOST_CONNECTION) {
-        die_map_[pixelId].connection_state == DieConnectionState::CONNECTING;
+      if (die_map_[pixelId].connection_state ==
+          DieConnectionState::LOST_CONNECTION) {
+        log_i("Die %u reappeared", pixelId);
+        die_map_[pixelId].connection_state = DieConnectionState::CONNECTING;
       }
       continue;
     }
@@ -180,14 +182,14 @@ void PixelAdvertiseCallbacks::onResult(BLEAdvertisedDevice advertisedDevice) {
 static void PixelNotifyCallback(
     PixelsDieID id, BLERemoteCharacteristic *pBLERemoteCharacteristic,
     uint8_t *pData, size_t length, bool isNotify) {
-
   if (pData[0] == 3) {
     log_i("Roll state: %u, face: %u", pData[1], pData[2]);
     if (xSemaphoreTake(event_mutex_handle_, portMAX_DELAY)) {
       if (roll_updates_.size() >= MAX_EVENT_QUEUE_SIZE) {
         roll_updates_.erase(roll_updates_.begin());
       }
-      roll_updates_.emplace_back(id, RollEvent{millis(), RollState(pData[1]), pData[2]});
+      roll_updates_.emplace_back(
+          id, RollEvent{millis(), RollState(pData[1]), pData[2]});
       xSemaphoreGive(event_mutex_handle_);
     }
   } else if (pData[0] == 34) {
@@ -221,7 +223,7 @@ static void UpdateDieConnections() {
     if (die.connection_state == DieConnectionState::DONT_CONNECT) {
       TryDisconnect();
     } else if (die.connection_state == DieConnectionState::CONNECTING) {
-      log_i("Connecting");
+      log_i("Connecting to %s (%u)", die.description.name.c_str(), id);
       die.client->connect(&die.device);
       if (!die.client->isConnected()) {
         log_e("Failed to connect to server");
@@ -255,11 +257,13 @@ static void UpdateDieConnections() {
       }
 
       log_i("Connected to %s (%u) <<<", die.description.name.c_str(), id);
-      die.connection_state == DieConnectionState::CONNECTED;
+      die.connection_state = DieConnectionState::CONNECTED;
       return;
     } else if (die.connection_state == DieConnectionState::CONNECTED) {
       if (!die.client->isConnected()) {
-        die.connection_state == DieConnectionState::LOST_CONNECTION;
+        log_i("Lost connected to %s (%u) <<<", die.description.name.c_str(),
+              id);
+        die.connection_state = DieConnectionState::LOST_CONNECTION;
       }
     }
   }
@@ -267,8 +271,9 @@ static void UpdateDieConnections() {
 
 /**
  * This is the function run by the background task triggered by `ScanForDice`
- * 
- * It performs the scans at the configured rate, and calls `UpdateDieConnections`
+ *
+ * It performs the scans at the configured rate, and calls
+ * `UpdateDieConnections`
  */
 static void ScanTaskLoop(void *parameter) {
   log_i("Initialize BLE scan");
@@ -308,16 +313,16 @@ void ScanForDice(uint32_t duration, uint32_t delay_between_scans,
 
 void StopScanning() { run_scans_ = false; }
 
-void ListDice(std::vector<PixelsDieID> &out_list,
-              DieSelection die_to_list) {
+void ListDice(std::vector<PixelsDieID> &out_list, DieSelection die_to_list) {
   out_list.clear();
   if (xSemaphoreTake(connect_mutex_handle_, portMAX_DELAY)) {
     for (const auto &pair : die_map_) {
+      bool is_connected =
+          pair.second.connection_state == DieConnectionState::CONNECTED &&
+          pair.second.client->isConnected();
       if (die_to_list == DieSelection::ANY ||
-          (die_to_list == DieSelection::CONNECTED &&
-           pair.second.client->isConnected()) ||
-          (die_to_list == DieSelection::DISCONNECTED &&
-           !pair.second.client->isConnected())) {
+          (die_to_list == DieSelection::CONNECTED && is_connected) ||
+          (die_to_list == DieSelection::DISCONNECTED && !is_connected)) {
         out_list.push_back(pair.first);
       }
     }
@@ -328,8 +333,9 @@ void ListDice(std::vector<PixelsDieID> &out_list,
 void ConnectDie(PixelsDieID id) {
   if (!DieFound(id)) {
     log_e("Connecting to unknown die");
-  // Only change state if die was previously blacklisted.
-  } else if (die_map_[id].connection_state == DieConnectionState::DONT_CONNECT) {
+    // Only change state if die was previously blacklisted.
+  } else if (die_map_[id].connection_state ==
+             DieConnectionState::DONT_CONNECT) {
     die_map_[id].connection_state = DieConnectionState::CONNECTING;
   }
 }
