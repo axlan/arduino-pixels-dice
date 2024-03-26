@@ -1,10 +1,22 @@
-An Arduino library for connecting to Pixels Dice over Bluetooth Low Energy
+# pixels-dice-interface
 
-This is an unofficial library for connecting to the Pixels Dice. It is only tested with the ESP32. See <https://github.com/GameWithPixels> for official Pixels Dice libraries.
+An Arduino library for connecting to Pixels Dice over Bluetooth Low Energy.
+
+Demo Video:
+
+[<img src="https://i.ytimg.com/vi/rHTxUflp8Tc/maxresdefault.jpg" width="50%">](https://www.youtube.com/watch?v=rHTxUflp8Tc "Dice interface demo")
+
+This is an unofficial library, and it is only tested with the ESP32. See <https://github.com/GameWithPixels> for official Pixels Dice libraries.
+
+The ESP32 is a WiFi+Bluetooth capable microcontroller. You can get a dev board that just needs a 5V power supply (usually a USB) for about $3. With it you can effectively give your dice an internet/LAN connection or connect directly to other electronics.
+
+This library is available in the Arduino IDE and PlatformIO library managers.
 
 The code for this was originally adapted from <https://gist.github.com/JpEncausse/cb1dbcca156784ac1e0804243da8e481>.
 
 The interface is targeting the protocol specified in <https://github.com/GameWithPixels/.github/blob/main/doc/CommunicationsProtocol.md>
+
+# Design Goals
 
 This interface is abstracts away the asynchronous events to allow the dice to be handled with a simple event loop. The functions handle interacting with the BLE services and allow the data to be handled by polling.
 
@@ -46,6 +58,12 @@ See <https://docs.platformio.org/en/latest/platforms/espressif32.html#partition-
 # PlatformIO
 
 There's a `platformio.ini` file to allow running the examples from this library in PlatformIO. It does pre/post script modifications to copy the *.ino files into the `src/` directory.
+
+# Arduino IDE
+
+See a brief demo of setting up the library in the Arduino IDE here:
+
+[<img src="https://i.ytimg.com/vi/ATy9zyfrcd0/maxresdefault.jpg" width="50%">](https://www.youtube.com/watch?v=ATy9zyfrcd0 "Dice interface demo")
 
 # TODO
 1. Implement any useful missing features of the interface.
