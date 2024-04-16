@@ -17,6 +17,9 @@
  *
  * This example depends on https://github.com/256dpi/arduino-mqtt which can be
  * installed through the Arduino library as "MQTT".
+ * 
+ * For an example of how to build an application that uses the dices' MQTT
+ * output to log rolls to a CSV file, see `dice_logger.py`
  */
 
 #include <Arduino.h>
@@ -25,8 +28,10 @@
 #include <MQTT.h>
 #include <pixels_dice_interface.h>
 
+// SET THESE VALUES TO THE WIFI CREDENTIALS TO BE USED!
 static constexpr const char *SSID = "SSID";
 static constexpr const char *PASSWORD = "PASSWORD";
+// SET THE SERVER BELOW TO THE IP OF THE MQTT BROKER TO USE!
 static constexpr const char *SERVER_ADDR = "SERVER";
 
 WiFiClient net;
@@ -98,7 +103,12 @@ void loop()
                   pixels::ToString(roll.second.state),
                   roll.second.current_face + 1);
     char json_buffer[128];
-    sprintf(json_buffer, "{\"name\":\"%s\",\"state\":%d\",\"val\":%d}", name, int(roll.second.state), roll.second.current_face + 1);
+    sprintf(json_buffer,
+            "{\"name\":\"%s\",\"state\":%d,\"val\":%d,\"time\":%d}",
+            name,
+            int(roll.second.state),
+            roll.second.current_face + 1,
+            roll.second.timestamp);
     client.publish("/dice/roll", json_buffer);
   }
 }

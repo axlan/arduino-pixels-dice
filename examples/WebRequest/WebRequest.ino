@@ -33,6 +33,7 @@
 
 WiFiMulti wifiMulti;
 
+// SET THESE VALUES TO THE WIFI CREDENTIALS TO BE USED!
 static constexpr const char *SSID = "SSID";
 static constexpr const char *PASSWORD = "PASSWORD";
 // The host server to send data to. This example uses port 8080, but leaving out
