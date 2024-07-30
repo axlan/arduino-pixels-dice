@@ -313,6 +313,8 @@ void ScanForDice(uint32_t duration, uint32_t delay_between_scans,
 
 void StopScanning() { run_scans_ = false; }
 
+bool IsScanning() { return run_scans_; };
+
 void ListDice(std::vector<PixelsDieID> &out_list, DieSelection die_to_list) {
   out_list.clear();
   if (xSemaphoreTake(connect_mutex_handle_, portMAX_DELAY)) {

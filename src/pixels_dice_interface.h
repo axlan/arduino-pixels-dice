@@ -71,6 +71,7 @@ struct RollEvent {
       0;  // System time in milliseconds when event was received.
   RollState state = RollState::UNKNOWN;  // Current rolling state
   uint8_t current_face = 0;              // Current face up (face index)
+  RollEvent(){}
   RollEvent(unsigned long timestamp, RollState state, uint8_t current_face)
       : timestamp(timestamp), state(state), current_face(current_face) {}
 };
@@ -78,6 +79,7 @@ struct RollEvent {
 struct BatteryEvent {
   uint8_t battery_level = 0;  // Battery level in percentage
   bool is_charging = false;
+  BatteryEvent(){}
   BatteryEvent(uint8_t battery_level, bool is_charging)
       : battery_level(battery_level), is_charging(is_charging) {}
 };
@@ -102,6 +104,8 @@ void ScanForDice(uint32_t scan_time, uint32_t time_between_scans,
                  bool auto_connect = true);
 
 void StopScanning();
+
+bool IsScanning();
 
 /**
  * Get the list of dice that have been found based on their connection status.
